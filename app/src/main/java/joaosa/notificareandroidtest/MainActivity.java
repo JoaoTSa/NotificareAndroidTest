@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.support.v4.app.FragmentActivity;
 
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -25,6 +26,10 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+import re.notifica.Notificare;
+import re.notifica.NotificareCallback;
+import re.notifica.NotificareError;
+
 public class MainActivity extends FragmentActivity {
 
     private MainActivity thisActivity = this;
@@ -36,6 +41,21 @@ public class MainActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setUpMapIfNeeded();
+
+        Notificare.shared().launch(this);
+        Notificare.shared().setIntentReceiver(Receiver.class);
+        Notificare.shared().registerDevice(Notificare.shared().getDeviceId(), "userId", "username", new NotificareCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                Toast.makeText(thisActivity, "Deviced registered successfuly on Notificare!", Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onError(NotificareError error) {
+                Toast.makeText(thisActivity, "Error registering device on Notificare!", Toast.LENGTH_LONG).show();
+            }
+        });
+
         IntentFilter intentFilter = new IntentFilter("restResult");
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -70,12 +90,16 @@ public class MainActivity extends FragmentActivity {
             }
         };
         this.registerReceiver(broadcastReceiver, intentFilter);
+        Notificare.shared().setForeground(true);
+        Notificare.shared().getEventLogger().logStartSession();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         this.unregisterReceiver(this.broadcastReceiver);
+        Notificare.shared().setForeground(false);
+        Notificare.shared().getEventLogger().logEndSession();
     }
 
     private void setUpMapIfNeeded() {
@@ -182,9 +206,5 @@ public class MainActivity extends FragmentActivity {
 
         }
 
-    }
-
-    public static double distance(double x1, double y1, double x2, double y2) {
-        return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     }
 }
